@@ -26,11 +26,13 @@ for row in rows[1:]:
             away = True
             teams.append(team)
             ml.append(odds)
-            dk_valids[frozenset(teams)] = (tuple(teams), tuple(ml))
+            if teams[0] > teams[1]:
+                teams = teams[::-1]
+                ml = ml[::-1]
+            dk_valids[tuple(teams)] = tuple(ml)
     except:
         pass
 
-'''
 driver.get(fd_url)
 page_source = driver.page_source
 soup = BeautifulSoup(page_source, "html.parser")
@@ -43,19 +45,55 @@ for game_link in game_links:
             odd = False
             teams = game_link.get('title').split(' @ ')
             game = game_link.parent
-            lines = game.select('div:nth-of-type(1)')
-            print(lines)
-            for line in lines:
-                pass
-                #2nd child home
-                    # 2nd child ML
-                        # 1st child
-                            # 1st child
-                                # text
+            game_inner = game.contents[1]
+            away = game_inner.contents[0].contents[1].contents[0].contents[0].text
+            home = game_inner.contents[1].contents[1].contents[0].contents[0].text
+            ml = [away, home]
+            if teams[0] > teams[1]:
+                teams = teams[::-1]
+                ml = ml[::-1]
+            fd_valids[tuple(teams)] = tuple(ml)
         else:
             odd = True
             pass
     except:
         pass
-        
-'''
+driver.close()
+
+
+def check_arb(game):
+    dk_odds_1 = dk_valids[game][0]
+    dk_odds_2 = dk_valids[game][1]
+    fd_odds_1 = fd_valids[game][0]
+    fd_odds_2 = fd_valids[game][1]
+    if dk_odds_1[0] == '+':
+        dk_decimal_1 = 1+int(dk_odds_1[1:])/100
+    else:
+        dk_decimal_1 = 1+100/int(dk_odds_1[1:])
+    if dk_odds_2[0] == '+':
+        dk_decimal_2 = 1+int(dk_odds_2[1:])/100
+    else:
+        dk_decimal_2 = 1+100/int(dk_odds_2[1:])
+    if fd_odds_1[0] == '+':
+        fd_decimal_1 = 1+int(fd_odds_1[1:])/100
+    else:
+        fd_decimal_1 = 1+100/int(fd_odds_1[1:])
+    if fd_odds_2[0] == '+':
+        fd_decimal_2 = 1+int(fd_odds_2[1:])/100
+    else:
+        fd_decimal_2 = 1+100/int(fd_odds_2[1:])
+    if 1/fd_decimal_1 + 1/dk_decimal_2 < 1:
+        return {"fd": (game[0], 1 / fd_decimal_1), "dk": (game[1], 1 / dk_decimal_2)}
+    if 1/fd_decimal_2 + 1/dk_decimal_1 < 1:
+        return {"fd": (game[1], 1/fd_decimal_2), "dk": (game[0], 1/dk_decimal_1)}
+    return None
+
+
+
+unit = 100
+
+for game in dk_valids:
+    if game in fd_valids:
+        arb = check_arb(game)
+        if arb:
+            print(f"Bet {unit*arb['fd'][1]} on {arb['fd'][0]} on Fanduel @ {-100/(1/arb['fd'][1]-1) if 1/arb['fd'][1] < 2 else (1/arb['fd'][1]-1)*100} and {unit*arb['dk'][1]} on {arb['dk'][0]} on DraftKings @ {-100/(1/arb['dk'][1]-1) if 1/arb['dk'][1] < 2 else (1/arb['dk'][1]-1)*100} to profit {unit-(unit*arb['fd'][1]+unit*arb['dk'][1])}")
