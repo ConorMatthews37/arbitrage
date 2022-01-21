@@ -1,3 +1,4 @@
+import math
 from bs4 import BeautifulSoup
 from selenium import webdriver
 
@@ -98,4 +99,4 @@ for game in dk_valids:
     if game in fd_valids:
         arb = check_arb(game)
         if arb:
-            print(f"Bet {round(unit*arb['fd'][1], 2)} on {arb['fd'][0]} on Fanduel @ {-100/(1/arb['fd'][1]-1) if 1/arb['fd'][1] < 2 else (1/arb['fd'][1]-1)*100} and {unit*arb['dk'][1]} on {arb['dk'][0]} on DraftKings @ {-100/(1/arb['dk'][1]-1) if 1/arb['dk'][1] < 2 else (1/arb['dk'][1]-1)*100} to profit {unit-(unit*arb['fd'][1]+unit*arb['dk'][1])}")
+            print(f"Bet ${round(unit*arb['fd'][1], 2)} on {arb['fd'][0]} on Fanduel @{math.trunc(-100/(1/arb['fd'][1]-1)) if 1/arb['fd'][1] < 2 else '+'+str(math.trunc((1/arb['fd'][1]-1)*100))} and ${round(unit*arb['dk'][1], 2)} on {arb['dk'][0]} on DraftKings @{math.trunc(-100/(1/arb['dk'][1]-1)) if 1/arb['dk'][1] < 2 else '+'+str(math.trunc((1/arb['dk'][1]-1)*100))} to profit ${round(unit-(unit*arb['fd'][1]+unit*arb['dk'][1]), 2)}")
