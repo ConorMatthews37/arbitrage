@@ -29,7 +29,8 @@ for row in rows[1:]:
             if teams[0] > teams[1]:
                 teams = teams[::-1]
                 ml = ml[::-1]
-            dk_valids[tuple(teams)] = tuple(ml)
+            if ml[0] != '' and ml[1] != '':
+                dk_valids[tuple(teams)] = tuple(ml)
     except:
         pass
 
@@ -52,7 +53,8 @@ for game_link in game_links:
             if teams[0] > teams[1]:
                 teams = teams[::-1]
                 ml = ml[::-1]
-            fd_valids[tuple(teams)] = tuple(ml)
+            if ml[0] != '' and ml[1] != '':
+                fd_valids[tuple(teams)] = tuple(ml)
         else:
             odd = True
             pass
@@ -96,4 +98,4 @@ for game in dk_valids:
     if game in fd_valids:
         arb = check_arb(game)
         if arb:
-            print(f"Bet {unit*arb['fd'][1]} on {arb['fd'][0]} on Fanduel @ {-100/(1/arb['fd'][1]-1) if 1/arb['fd'][1] < 2 else (1/arb['fd'][1]-1)*100} and {unit*arb['dk'][1]} on {arb['dk'][0]} on DraftKings @ {-100/(1/arb['dk'][1]-1) if 1/arb['dk'][1] < 2 else (1/arb['dk'][1]-1)*100} to profit {unit-(unit*arb['fd'][1]+unit*arb['dk'][1])}")
+            print(f"Bet {round(unit*arb['fd'][1], 2)} on {arb['fd'][0]} on Fanduel @ {-100/(1/arb['fd'][1]-1) if 1/arb['fd'][1] < 2 else (1/arb['fd'][1]-1)*100} and {unit*arb['dk'][1]} on {arb['dk'][0]} on DraftKings @ {-100/(1/arb['dk'][1]-1) if 1/arb['dk'][1] < 2 else (1/arb['dk'][1]-1)*100} to profit {unit-(unit*arb['fd'][1]+unit*arb['dk'][1])}")
