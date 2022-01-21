@@ -7,6 +7,9 @@ dk_url = "https://sportsbook.draftkings.com/leagues/basketball/88670771"
 
 driver = webdriver.Chrome()
 
+# This driver call is for chromium to work on Mitch's computer.
+# driver = webdriver.Chrome('/Users/mitchellmiles/gambling/arbitrage/venv/lib/python3.9/site-packages/selenium/webdriver/chrome/chromedriver')
+
 driver.get(dk_url)
 page_source = driver.page_source
 dk_soup = BeautifulSoup(page_source, "html.parser")
@@ -64,11 +67,11 @@ for game_link in game_links:
 driver.close()
 
 
-def check_arb(game):
-    dk_odds_1 = dk_valids[game][0]
-    dk_odds_2 = dk_valids[game][1]
-    fd_odds_1 = fd_valids[game][0]
-    fd_odds_2 = fd_valids[game][1]
+def check_arb(dk_game, fd_game):
+    dk_odds_1 = dk_valids[dk_game][0]
+    dk_odds_2 = dk_valids[dk_game][1]
+    fd_odds_1 = fd_valids[fd_game][0]
+    fd_odds_2 = fd_valids[fd_game][1]
     if dk_odds_1[0] == '+':
         dk_decimal_1 = 1+int(dk_odds_1[1:])/100
     else:
@@ -86,17 +89,18 @@ def check_arb(game):
     else:
         fd_decimal_2 = 1+100/int(fd_odds_2[1:])
     if 1/fd_decimal_1 + 1/dk_decimal_2 < 1:
-        return {"fd": (game[0], 1 / fd_decimal_1), "dk": (game[1], 1 / dk_decimal_2)}
+        return {"fd": (fd_game[0], 1 / fd_decimal_1), "dk": (dk_game[1], 1 / dk_decimal_2)}
     if 1/fd_decimal_2 + 1/dk_decimal_1 < 1:
-        return {"fd": (game[1], 1/fd_decimal_2), "dk": (game[0], 1/dk_decimal_1)}
+        return {"fd": (fd_game[1], 1/fd_decimal_2), "dk": (dk_game[0], 1/dk_decimal_1)}
     return None
 
 
 
 unit = 100
 
-for game in dk_valids:
-    if game in fd_valids:
-        arb = check_arb(game)
+for dk_game in dk_valids:
+    fd_game = [(team1, team2) for (team1, team2) in fd_valids if (team1 == dk_game[0] or team2 == dk_game[1])]
+    if len(fd_game) > 0:
+        arb = check_arb(dk_game, fd_game[0])
         if arb:
-            print(f"Bet ${round(unit*arb['fd'][1], 2)} on {arb['fd'][0]} on Fanduel @{math.trunc(-100/(1/arb['fd'][1]-1)) if 1/arb['fd'][1] < 2 else '+'+str(math.trunc((1/arb['fd'][1]-1)*100))} and ${round(unit*arb['dk'][1], 2)} on {arb['dk'][0]} on DraftKings @{math.trunc(-100/(1/arb['dk'][1]-1)) if 1/arb['dk'][1] < 2 else '+'+str(math.trunc((1/arb['dk'][1]-1)*100))} to profit ${round(unit-(unit*arb['fd'][1]+unit*arb['dk'][1]), 2)}")
+            print(f"Bet ${round(unit*arb['fd'][1], 2)} on {arb['fd'][0]} on Fanduel @ {math.trunc(-100/(1/arb['fd'][1]-1)) if 1/arb['fd'][1] < 2 else '+'+str(math.trunc((1/arb['fd'][1]-1)*100))} and ${round(unit*arb['dk'][1], 2)} on {arb['dk'][0]} on DraftKings @ {math.trunc(-100/(1/arb['dk'][1]-1)) if 1/arb['dk'][1] < 2 else '+'+str(math.trunc((1/arb['dk'][1]-1)*100))} to profit ${round(unit-(unit*arb['fd'][1]+unit*arb['dk'][1]), 2)}")
