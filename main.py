@@ -8,6 +8,8 @@ dk_url = "https://sportsbook.draftkings.com/leagues/basketball/88670771"
 
 
 def get_odds():
+    # This driver call is for chromium to work on Mitch's computer. Don't delete pls.
+    # driver = webdriver.Chrome('/Users/mitchellmiles/gambling/arbitrage/venv/lib/python3.9/site-packages/selenium/webdriver/chrome/chromedriver')
     driver = webdriver.Chrome()
     driver.get(dk_url)
     page_source = driver.page_source
@@ -132,7 +134,7 @@ def check_arb_rounded(fd_game, dk_game, unit, fd_valids, dk_valids):
             rounded2 = math.floor(bet2)
             rounded1 = math.floor((rounded2 / bet2) * bet1)
         if (rounded1*fd_decimal_1 - rounded1 - rounded2 > 0) and (rounded2*dk_decimal_2 - rounded1 - rounded2 > 0):
-            return {'fd': (fd_valids[fd_game][0], fd_valids[fd_game][0], fd_decimal_1, rounded1), 'dk': (dk_valids[dk_game][1], dk_valids[dk_game][1], dk_decimal_2, rounded2)}
+            return {'fd': (fd_game[0], fd_valids[fd_game][0], fd_decimal_1, rounded1), 'dk': (dk_game[1], dk_valids[dk_game][1], dk_decimal_2, rounded2)}
     if 1 / fd_decimal_2 + 1 / dk_decimal_1 < 1:
         bet1 = (1 / fd_decimal_2) * unit
         bet2 = (1 / dk_decimal_1) * unit
@@ -143,7 +145,7 @@ def check_arb_rounded(fd_game, dk_game, unit, fd_valids, dk_valids):
             rounded1 = math.floor(bet1)
             rounded2 = math.floor((rounded1 / bet1) * bet2)
         if (rounded2*dk_decimal_1 - rounded1 - rounded2 > 0) and (rounded1*fd_decimal_2 - rounded1 - rounded2 > 0):
-            return {'fd': (fd_valids[fd_game][1], fd_valids[fd_game][1], fd_decimal_2, rounded1), 'dk': (dk_valids[dk_game][0], dk_valids[dk_game][0], dk_decimal_1, rounded2)}
+            return {'fd': (fd_game[1], fd_valids[fd_game][1], fd_decimal_2, rounded1), 'dk': (dk_game[0], dk_valids[dk_game][0], dk_decimal_1, rounded2)}
     return None
 
 
@@ -158,7 +160,7 @@ def run_exact(unit):
             arb = check_arb(fd_game[0], dk_game, fd_valids, dk_valids)
             if arb:
                 #If there is an opportunity for guaranteed profit at the time the odds were scraped, gives you information on how much to bet on each book
-                print(f"Bet ${round(unit*arb['fd'][1], 2)} on {arb['fd'][0]} on Fanduel @{math.trunc(-100/(1/arb['fd'][1]-1)) if 1/arb['fd'][1] < 2 else '+'+str(math.trunc((1/arb['fd'][1]-1)*100))} and ${round(unit*arb['dk'][1], 2)} on {arb['dk'][0]} on DraftKings @{math.trunc(-100/(1/arb['dk'][1]-1)) if 1/arb['dk'][1] < 2 else '+'+str(math.trunc((1/arb['dk'][1]-1)*100))} to profit ${round(unit-(unit*arb['fd'][1]+unit*arb['dk'][1]), 2)}")
+                print(f"Bet ${round(unit*arb['fd'][1], 2)} on {arb['fd'][0]} on Fanduel @ {math.trunc(-100/(1/arb['fd'][1]-1)) if 1/arb['fd'][1] < 2 else '+'+str(math.trunc((1/arb['fd'][1]-1)*100))} and ${round(unit*arb['dk'][1], 2)} on {arb['dk'][0]} on DraftKings @ {math.trunc(-100/(1/arb['dk'][1]-1)) if 1/arb['dk'][1] < 2 else '+'+str(math.trunc((1/arb['dk'][1]-1)*100))} to profit ${round(unit-(unit*arb['fd'][1]+unit*arb['dk'][1]), 2)}")
 
 def run_round(unit):
     fd_valids, dk_valids = get_odds()
@@ -170,7 +172,7 @@ def run_round(unit):
             # If both books have the same team, we check if there is an arbitrage opportunity. We used to check if both teams matched in case a team was on the page twice, but this is a rare case, and many teams are abbreviated differently between the two books.
             arb = check_arb_rounded(fd_game[0], dk_game, unit, fd_valids, dk_valids)
             if arb:
-                print(f"Bet ${arb['fd'][3]} on {arb['fd'][0]} on Fanduel @{arb['fd'][1]} and ${arb['dk'][3]} on {arb['dk'][0]} on DraftKings @{arb['dk'][1]} to profit ${round(min(arb['fd'][2] * arb['fd'][3] - arb['fd'][3] - arb['dk'][3], arb['dk'][2] * arb['dk'][3] - arb['fd'][3] - arb['dk'][3]), 2)}")
+                print(f"Bet ${arb['fd'][3]} on {arb['fd'][0]} on Fanduel @ {arb['fd'][1]} and ${arb['dk'][3]} on {arb['dk'][0]} on DraftKings @ {arb['dk'][1]} to profit ${round(min(arb['fd'][2] * arb['fd'][3] - arb['fd'][3] - arb['dk'][3], arb['dk'][2] * arb['dk'][3] - arb['fd'][3] - arb['dk'][3]), 2)}")
 
 
 #run_exact(100)
