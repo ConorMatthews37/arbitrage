@@ -1,9 +1,14 @@
+#This is a proof of concept
+#Designed to pull odds from two different online sportsbooks, check if there is a pairing of implied probabilities between the two that sums to less than 1
+#Returns the optimal bet amount using given unit size, rounding option for speed in placing bets (might help with limiting too)
+
 import math
 from bs4 import BeautifulSoup
 from selenium import webdriver
+import time
+from os import system, name
 
-
-fd_url = "https://sportsbook.fanduel.com/navigation/ncaab"
+fd_url = "https://sportsbook.fanduel.com/navigation/ncaab?tab=men%27s-games"
 dk_url = "https://sportsbook.draftkings.com/leagues/basketball/88670771"
 
 
@@ -58,7 +63,7 @@ def get_odds():
                 if teams[0] > teams[1]:
                     teams = teams[::-1]
                     ml = ml[::-1]
-                if ml[0] != '' and ml[1] != '':
+                if (ml[0] != '' and ml[1] != '') and (ml[0] != '--' and ml[1] != '--'):
                     fd_valids[tuple(teams)] = tuple(ml)
             else:
                 odd = True
@@ -149,31 +154,44 @@ def check_arb_rounded(fd_game, dk_game, unit, fd_valids, dk_valids):
     return None
 
 
-def run_exact(unit):
-    fd_valids, dk_valids = get_odds()
-    fd_valids[('Conor', 'Mitch')] = ('-300', '+1000')
-    dk_valids[('Conor', 'Mitch')] = ('-150', '+330')
+def run_exact(unit, fd_valids, dk_valids):
     for dk_game in dk_valids:
         fd_game = [(team1, team2) for (team1, team2) in fd_valids if (team1 == dk_game[0] or team2 == dk_game[1])]
         if len(fd_game) > 0:
+            fd_game = fd_game[0]
             #If both books have the same team, we check if there is an arbitrage opportunity. We used to check if both teams matched in case a team was on the page twice, but this is a rare case, and many teams are abbreviated differently between the two books.
-            arb = check_arb(fd_game[0], dk_game, fd_valids, dk_valids)
+            arb = check_arb(fd_game, dk_game, fd_valids, dk_valids)
             if arb:
                 #If there is an opportunity for guaranteed profit at the time the odds were scraped, gives you information on how much to bet on each book
-                print(f"Bet ${round(unit*arb['fd'][1], 2)} on {arb['fd'][0]} on Fanduel @ {math.trunc(-100/(1/arb['fd'][1]-1)) if 1/arb['fd'][1] < 2 else '+'+str(math.trunc((1/arb['fd'][1]-1)*100))} and ${round(unit*arb['dk'][1], 2)} on {arb['dk'][0]} on DraftKings @ {math.trunc(-100/(1/arb['dk'][1]-1)) if 1/arb['dk'][1] < 2 else '+'+str(math.trunc((1/arb['dk'][1]-1)*100))} to profit ${round(unit-(unit*arb['fd'][1]+unit*arb['dk'][1]), 2)}")
+                print(f"Bet ${round(unit*arb['fd'][1], 2)} on {arb['fd'][0]} on Fanduel @{math.trunc(-100/(1/arb['fd'][1]-1)) if 1/arb['fd'][1] < 2 else '+'+str(math.trunc((1/arb['fd'][1]-1)*100))} and ${round(unit*arb['dk'][1], 2)} on {arb['dk'][0]} on DraftKings @{math.trunc(-100/(1/arb['dk'][1]-1)) if 1/arb['dk'][1] < 2 else '+'+str(math.trunc((1/arb['dk'][1]-1)*100))} to profit ${round(unit-(unit*arb['fd'][1]+unit*arb['dk'][1]), 2)}")
 
-def run_round(unit):
-    fd_valids, dk_valids = get_odds()
-    fd_valids[('Conor', 'Mitch')] = ('-300', '+1000')
-    dk_valids[('Conor', 'Mitch')] = ('-150', '+330')
+def run_round(unit, fd_valids, dk_valids):
     for dk_game in dk_valids:
         fd_game = [(team1, team2) for (team1, team2) in fd_valids if (team1 == dk_game[0] or team2 == dk_game[1])]
         if len(fd_game) > 0:
+            fd_game = fd_game[0]
             # If both books have the same team, we check if there is an arbitrage opportunity. We used to check if both teams matched in case a team was on the page twice, but this is a rare case, and many teams are abbreviated differently between the two books.
-            arb = check_arb_rounded(fd_game[0], dk_game, unit, fd_valids, dk_valids)
+            arb = check_arb_rounded(fd_game, dk_game, unit, fd_valids, dk_valids)
             if arb:
-                print(f"Bet ${arb['fd'][3]} on {arb['fd'][0]} on Fanduel @ {arb['fd'][1]} and ${arb['dk'][3]} on {arb['dk'][0]} on DraftKings @ {arb['dk'][1]} to profit ${round(min(arb['fd'][2] * arb['fd'][3] - arb['fd'][3] - arb['dk'][3], arb['dk'][2] * arb['dk'][3] - arb['fd'][3] - arb['dk'][3]), 2)}")
+                print(f"Fanduel odds - {fd_game[0]}: {fd_valids[fd_game][0]} {fd_game[1]}: {fd_valids[fd_game][1]}")
+                print(f"DraftKings odds - {dk_game[0]}: {dk_valids[dk_game][0]} {dk_game[1]}: {dk_valids[dk_game][1]}")
+                print(f"Bet ${arb['fd'][3]} on {arb['fd'][0]} on Fanduel @{arb['fd'][1]} and ${arb['dk'][3]} on {arb['dk'][0]} on DraftKings @{arb['dk'][1]} to profit ${round(min(arb['fd'][2] * arb['fd'][3] - arb['fd'][3] - arb['dk'][3], arb['dk'][2] * arb['dk'][3] - arb['fd'][3] - arb['dk'][3]), 2)}")
+                print("----------------------------------------------------------------------------------------------------------")
+
+def clear():
+    if name == 'nt':
+        _ = system('cls')
 
 
-#run_exact(100)
-run_round(100)
+
+starttime = time.time()
+while True:
+    fd_valids, dk_valids = None, None
+    fd_valids, dk_valids = get_odds()
+    print(fd_valids)
+    print(dk_valids)
+    clear()
+    run_round(100, fd_valids, dk_valids)
+    print("Done")
+    print(len(fd_valids.keys()), len(dk_valids.keys()))
+    time.sleep(60.0 - ((time.time() - starttime) % 60.0))
